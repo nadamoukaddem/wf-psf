@@ -14,74 +14,21 @@ import tensorflow as tf
 import numpy as np
 import os
 
-metrics_params = RecursiveNamespace(
-    model_save_path="psf_model",
-    saved_training_cycle="2",
-    trained_model_path="data/validation/main_random_seed",
-    trained_model_config="config/training_config.yaml",
-    plotting_config=None,
-    eval_mono_metric_rmse=True,
-    eval_opd_metric_rmse=True,
-    eval_train_shape_sr_metric_rmse=True,
-    ground_truth_model=RecursiveNamespace(
-        model_params=RecursiveNamespace(
-            model_name="poly",
-            dataset_type="C_poly",
-            sed_interp_pts_per_bin=0,
-            sed_extrapolate=True,
-            sed_interp_kind="linear",
-            sed_sigma=0,
-            n_bins_lda=20,
-            output_Q=3,
-            oversampling_rate=3,
-            output_dim=32,
-            pupil_diameter=256,
-            use_sample_weights=True,
-            interpolation_type="None",
-            x_lims=[0.0, 1000.0],
-            y_lims=[0.0, 1000.0],
-            param_hparams=RecursiveNamespace(
-                random_seed=3877572,
-                l2_param=0.0,
-                n_zernikes=45,
-                d_max=2,
-                save_optim_history_param=True,
-            ),
-            nonparam_hparams=RecursiveNamespace(
-                d_max_nonparam=5,
-                num_graph_features=10,
-                l1_rate=1e-08,
-                project_dd_features=False,
-                reset_dd_features=False,
-                save_optim_history_nonparam=True,
-            ),
-        )
-    ),
-    metrics_hparams=RecursiveNamespace(
-        batch_size=16,
-        opt_stars_rel_pix_rmse=False,
-        l2_param=0.0,
-        output_Q=1,
-        output_dim=64,
-    ),
-)
-
 cwd = os.getcwd()
-
-psf_model_path = os.path.join(
-    cwd,
-    "src/wf_psf/tests",
-    metrics_params.trained_model_path,
-    metrics_params.model_save_path,
-)
-
-main_dir = os.path.join(
-    cwd, "src/wf_psf/tests", metrics_params.trained_model_path, "metrics"
-)
 
 
 @pytest.fixture(scope="module")
-def weights_path_basename(training_params):
+def psf_model_path(metrics_params):
+    return os.path.join(
+        cwd,
+        "src/wf_psf/tests",
+        metrics_params.trained_model_path,
+        metrics_params.model_save_path,
+    )
+
+
+@pytest.fixture(scope="session")
+def weights_path_basename(psf_model_path, metrics_params, training_params):
     weights_path = (
         psf_model_path
         + "/"
@@ -96,18 +43,8 @@ def weights_path_basename(training_params):
     return weights_path
 
 
-@pytest.fixture(scope="module")
-def main_metrics(training_params):
-    metrics_filename = (
-        "metrics-"
-        + training_params.model_params.model_name
-        + training_params.id_name
-        + ".npy"
-    )
-    return np.load(os.path.join(main_dir, metrics_filename), allow_pickle=True)[()]
-
-
 def test_eval_metrics_polychromatic_lowres(
+    metrics_params,
     training_params,
     weights_path_basename,
     training_data,
@@ -155,6 +92,7 @@ def test_eval_metrics_polychromatic_lowres(
 
 
 def test_evaluate_metrics_opd(
+    metrics_params,
     training_params,
     weights_path_basename,
     training_data,
@@ -204,6 +142,7 @@ def test_evaluate_metrics_opd(
 
 
 def test_eval_metrics_mono_rmse(
+    metrics_params,
     training_params,
     weights_path_basename,
     training_data,
@@ -268,6 +207,7 @@ def test_eval_metrics_mono_rmse(
 
 
 def test_evaluate_metrics_shape(
+    metrics_params,
     training_params,
     weights_path_basename,
     training_data,
