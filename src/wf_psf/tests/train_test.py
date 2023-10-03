@@ -15,57 +15,9 @@ import numpy as np
 import os
 import scipy
 from re import search
+import logging
 
-
-cwd = os.getcwd()
-
-validation_dir = "src/wf_psf/tests/data/validation/main_random_seed"
-
-
-@pytest.fixture(scope="module")
-def tmp_checkpoint_dir(tmp_path_factory):
-    tmp_chkp_dir = tmp_path_factory.mktemp("checkpoint")
-    return str(tmp_chkp_dir)
-
-
-@pytest.fixture(scope="module")
-def tmp_optimizer_dir(tmp_path_factory):
-    tmp_optim_hist_dir = tmp_path_factory.mktemp("optim-hist")
-    return str(tmp_optim_hist_dir)
-
-
-@pytest.fixture(scope="module")
-def tmp_psf_model_dir(tmp_path_factory):
-    tmp_psf_model_dir = tmp_path_factory.mktemp("psf_model_dir")
-    return str(tmp_psf_model_dir)
-
-
-@pytest.fixture(scope="module")
-def checkpoint_dir():
-    return os.path.join(
-        cwd,
-        validation_dir,
-        "checkpoint",
-    )
-
-
-@pytest.fixture(scope="module")
-def optimizer_dir():
-    return os.path.join(
-        cwd,
-        validation_dir,
-        "optim-hist",
-    )
-
-
-@pytest.fixture(scope="module")
-def psf_model_dir():
-    return os.path.join(
-        cwd,
-        validation_dir,
-        "psf_model",
-    )
-
+logger = logging.getLogger(__name__)
 
 def test_train(
     training_params,
@@ -79,6 +31,7 @@ def test_train(
     tmp_psf_model_dir,
     psf_model,
 ):
+    logger.info("Starting training...")
     train.train(
         training_params,
         training_data,
@@ -88,16 +41,19 @@ def test_train(
         tmp_psf_model_dir,
     )
 
+    logger.info("Training complete")
     weights_type_dict = {
         checkpoint_dir: "checkpoint_callback_",
         psf_model_dir: "psf_model_",
     }
 
+    logger.info(weights_type_dict)
     # Evaluate the weights for each checkpoint callback and the final psf models wrt baseline
     weights_basename = (
         training_params.model_params.model_name + training_params.id_name + "_cycle"
     )
 
+    logger.info("Retrieving psf model.")
     tmp_psf_model = psf_models.get_psf_model(
         training_params.model_params, training_params.training_hparams
     )
@@ -106,7 +62,7 @@ def test_train(
         [checkpoint_dir, psf_model_dir], [tmp_checkpoint_dir, tmp_psf_model_dir]
     ):
         first_cycle = 1
-
+        logger.info(weights_dir)
         if search("psf_model", weights_dir):
             if not training_params.training_hparams.multi_cycle_params.save_all_cycles:
                 first_cycle = (
@@ -124,7 +80,8 @@ def test_train(
                 + weights_basename
                 + str(cycle)
             )
-
+            logger.info(cycle)
+            
             tmp_basename_cycle = (
                 tmp_weights_dir
                 + "/"
@@ -138,9 +95,11 @@ def test_train(
 
             tmp_psf_model.load_weights(tmp_basename_cycle)
             tmp_saved_model_weights = tmp_psf_model.get_weights()
-
+            logger.info("Evaluating difference...")
             diff = abs(
                 np.array(saved_model_weights) - np.array(tmp_saved_model_weights)
             )
+            logger.info(diff)
             for arr in diff:
-                assert np.mean(arr) < 1.0e-9
+                logger.info(np.mean(arr))
+                assert np.mean(arr) < 1.e-11, logger.info("Test failed.")
