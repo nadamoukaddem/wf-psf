@@ -92,7 +92,7 @@ git commit -m "Description of the changes"
 ```bash
 git push origin <branch-name>
 ```
-6. Open a [pull request](https://github.com/your-organization/wavediff/compare) with a clear description of your changes and reference any related issues.
+6. Open a [pull request](https://github.com/CosmoStat/wf-psf/compare) with a clear description of your changes and reference any related issues.
 
 ### Revising a PR
 
