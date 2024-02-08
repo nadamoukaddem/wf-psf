@@ -32,4 +32,4 @@ Contributing
 ------------
 
 For information on how to contribute to the development of WaveDiff, see
-`Contributing to WaveDiff <./CONTRIBUTING.md>`_.
+`Contributing to WaveDiff <wf-psf/CONTRIBUTING.md>`_.
